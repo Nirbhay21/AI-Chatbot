@@ -1,0 +1,8 @@
+import express, { Router } from 'express';
+import { protect } from '../middlewares/auth.middleware.js';
+import { imageMessageController, textMessageController } from '../controllers/message.controller.js';
+const messageRouter = express.Router();
+messageRouter.post("/text", protect, textMessageController);
+messageRouter.post("/image", protect, imageMessageController);
+export default messageRouter;
+//# sourceMappingURL=message.route.js.map

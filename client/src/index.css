@@ -1,0 +1,23 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap');
+
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-outfit: 'Outfit', sans-serif;
+
+  --color-primary: #E6CCFF;
+}
+
+::-webkit-scrollbar{
+  display: none;
+}
+
+body {
+  font-family: "Outfit", sans-serif;
+}
+
+.reset-tw :not(pre):not(code) {
+  all: revert;
+}
