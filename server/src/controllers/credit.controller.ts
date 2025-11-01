@@ -91,6 +91,23 @@ export const purchasePlan = async (req: Request, res: Response) => {
         },
         expires_at: Math.floor(Date.now() / 1000) + 30 * 60, // 30 minutes from now
       });
+
+      // Defensive: if a PaymentIntent ID is present, update it explicitly to guarantee metadata
+      // (some flows may create or modify the PI after session creation)
+      if (session.payment_intent) {
+        try {
+          await stripe.paymentIntents.update(session.payment_intent as string, {
+            metadata: {
+              appId: "quickgpt",
+              transactionId: transaction._id.toString(),
+            }
+          });
+        } catch (err) {
+          // don't fail the request for transient update errors; log for debugging
+          console.error('Failed to update PaymentIntent metadata:', err);
+        }
+      }
+
       res.json({ success: true, url: session.url });
     }
   } catch (error) {
