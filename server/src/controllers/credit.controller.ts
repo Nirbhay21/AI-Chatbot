@@ -77,9 +77,17 @@ export const purchasePlan = async (req: Request, res: Response) => {
         mode: 'payment',
         success_url: `${origin}/loading`,
         cancel_url: `${origin}`,
+        // keep session-level metadata for visibility
         metadata: {
           appId: "quickgpt",
           transactionId: transaction._id.toString(),
+        },
+        // ensure metadata is set on the created PaymentIntent
+        payment_intent_data: {
+          metadata: {
+            appId: "quickgpt",
+            transactionId: transaction._id.toString(),
+          }
         },
         expires_at: Math.floor(Date.now() / 1000) + 30 * 60, // 30 minutes from now
       });
