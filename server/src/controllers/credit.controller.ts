@@ -78,14 +78,8 @@ export const purchasePlan = async (req: Request, res: Response) => {
         success_url: `${origin}/loading`,
         cancel_url: `${origin}`,
         metadata: {
+          appId: "quickgpt",
           transactionId: transaction._id.toString(),
-          appId: "quickgpt"
-        },
-        payment_intent_data: {
-          metadata: {
-            transactionId: transaction._id.toString(),
-            appId: "quickgpt"
-          }
         },
         expires_at: Math.floor(Date.now() / 1000) + 30 * 60, // 30 minutes from now
       });
