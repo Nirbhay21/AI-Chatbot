@@ -32,14 +32,14 @@ export const stripeWebhooks = async (req, res) => {
                         }
                     }
                     else {
-                        return res.status(400).send("Invalid App ID");
+                        return res.status(400).send(`Unknown appId: ${appId}`);
                     }
                 }
                 break;
             }
             default:
                 console.log(`Unhandled event type ${event.type}`);
-                break;
+                return res.status(200).json({ received: true });
         }
     }
     catch (error) {
