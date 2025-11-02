@@ -40,10 +40,12 @@ export const stripeWebhooks = async (req, res) => {
                         console.log("No sessions found for payment intent");
                     }
                 }
-                if (appId === "quickgpt" && transactionId) {
-                    console.log("Processing transaction for quickgpt app");
+                // If we have a transactionId, we can proceed even if appId is missing
+                if (transactionId) {
+                    console.log("Processing transaction with transactionId:", transactionId);
                     const transaction = await Transaction.findOne({ _id: transactionId, isPaid: false });
                     if (transaction) {
+                        console.log("Transaction found, processing...");
                         await User.updateOne({ _id: transaction?.userId }, {
                             $inc: { credits: transaction?.credits || 0 }
                         });
@@ -53,11 +55,20 @@ export const stripeWebhooks = async (req, res) => {
                     }
                     else {
                         console.log("Transaction not found or already paid");
+                        // Check if transaction exists but is already paid
+                        const existingTransaction = await Transaction.findOne({ _id: transactionId });
+                        if (existingTransaction) {
+                            console.log("Transaction already processed (isPaid: true)");
+                        }
+                        else {
+                            console.log("Transaction not found in database");
+                            return res.status(400).send(`Transaction not found: ${transactionId}`);
+                        }
                     }
                 }
                 else {
-                    console.log(`Missing or invalid metadata - appId: ${appId}, transactionId: ${transactionId}`);
-                    return res.status(400).send(`Missing or invalid metadata - appId: ${appId}, transactionId: ${transactionId}`);
+                    console.log(`Missing transactionId in metadata - appId: ${appId}, transactionId: ${transactionId}`);
+                    return res.status(400).send(`Missing transactionId in metadata - appId: ${appId}, transactionId: ${transactionId}`);
                 }
                 break;
             }
