@@ -18,26 +18,36 @@ export const stripeWebhooks = async (req: Request, res: Response) => {
     switch (event.type) {
       case "payment_intent.succeeded": {
         const paymentIntent = event.data.object as Stripe.PaymentIntent;
-        const sessionList = await stripe.checkout.sessions.list({
-          payment_intent: paymentIntent.id,
-        });
+        
+        // First try to get metadata directly from payment intent
+        let transactionId = paymentIntent.metadata?.transactionId;
+        let appId = paymentIntent.metadata?.appId;
+        
+        // If payment intent metadata is empty, fallback to session metadata
+        if (!transactionId || !appId) {
+          const sessionList = await stripe.checkout.sessions.list({
+            payment_intent: paymentIntent.id,
+          });
 
-        if (sessionList.data[0]) {
-          const session = sessionList.data[0];
-          const { transactionId, appId } = paymentIntent.metadata as Stripe.Metadata;
+          if (sessionList.data[0]) {
+            const session = sessionList.data[0];
+            transactionId = session.metadata?.transactionId;
+            appId = session.metadata?.appId;
+          }
+        }
 
-          if (appId === "quickgpt") {
-            const transaction = await Transaction.findOne({ _id: transactionId, isPaid: false });
+        if (appId === "quickgpt" && transactionId) {
+          const transaction = await Transaction.findOne({ _id: transactionId, isPaid: false });
+          if (transaction) {
             await User.updateOne({ _id: transaction?.userId }, {
               $inc: { credits: transaction?.credits || 0 }
-            })
-            if (transaction) {
-              transaction.isPaid = true;
-              await transaction?.save();
-            }
-          } else {
-            return res.status(400).send(`Unknown appId: ${appId}`);
+            });
+            transaction.isPaid = true;
+            await transaction?.save();
           }
+        } else {
+          console.log(`Missing or invalid metadata - appId: ${appId}, transactionId: ${transactionId}`);
+          return res.status(400).send(`Missing or invalid metadata - appId: ${appId}, transactionId: ${transactionId}`);
         }
         break;
       }
